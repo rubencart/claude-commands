@@ -1,0 +1,43 @@
+#!/scratch/rcartuyvels/openrouter_proj/.venv/bin/python3.12
+"""Delegate bulk file reading/analysis to a cheap model via OpenRouter."""
+import argparse, os, pathlib, sys
+
+from openrouter import OpenRouter
+
+def main():
+    parser = argparse.ArgumentParser(description="Ask a cheap LLM to analyze files")
+    parser.add_argument("--paths", nargs="+", required=True, help="Files to read")
+    parser.add_argument("--question", required=True, help="Question about the files")
+    parser.add_argument("--model", default="deepseek/deepseek-v4-flash", help="OpenRouter model ID")
+    parser.add_argument("--max-tokens", type=int, default=8192)
+    args = parser.parse_args()
+
+    docs = []
+    for path in args.paths:
+        try:
+            content = pathlib.Path(path).read_text()
+            docs.append(f"<file path='{path}'>\n{content}\n</file>")
+        except Exception as e:
+            print(f"Warning: could not read {path}: {e}", file=sys.stderr)
+
+    if not docs:
+        print("Error: no files could be read", file=sys.stderr)
+        sys.exit(1)
+
+    corpus = "\n\n".join(docs)
+
+    with OpenRouter(api_key=os.environ["OPENROUTER_API_KEY"]) as client:
+        resp = client.chat.send(
+            model=args.model,
+            messages=[
+                {"role": "system", "content": "You are a precise code analyst. Analyze the provided files and answer the question accurately and concisely. Use structured formatting."},
+                {"role": "user", "content": f"<corpus>\n{corpus}\n</corpus>"},
+                {"role": "user", "content": args.question},
+            ],
+            max_tokens=args.max_tokens,
+        )
+
+    print(resp.choices[0].message.content)
+
+if __name__ == "__main__":
+    main()

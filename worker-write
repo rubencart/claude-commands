@@ -1,0 +1,48 @@
+#!/scratch/rcartuyvels/openrouter_proj/.venv/bin/python3.12
+"""Delegate boilerplate/test/doc generation to a cheap model via OpenRouter."""
+import argparse, os, pathlib, sys
+
+from openrouter import OpenRouter
+
+def main():
+    parser = argparse.ArgumentParser(description="Generate files using a cheap LLM")
+    parser.add_argument("--spec", required=True, help="What to generate")
+    parser.add_argument("--context", nargs="+", default=[], help="Reference files to read for context")
+    parser.add_argument("--target", required=True, help="Output file path")
+    parser.add_argument("--model", default="deepseek/deepseek-v4-flash", help="OpenRouter model ID")
+    parser.add_argument("--max-tokens", type=int, default=16384)
+    args = parser.parse_args()
+
+    context_parts = []
+    for path in args.context:
+        try:
+            content = pathlib.Path(path).read_text()
+            context_parts.append(f"<file path='{path}'>\n{content}\n</file>")
+        except Exception as e:
+            print(f"Warning: could not read {path}: {e}", file=sys.stderr)
+
+    context_str = "\n\n".join(context_parts) if context_parts else ""
+
+    prompt = f"Generate the following:\n{args.spec}\n"
+    if context_str:
+        prompt += f"\nUse these reference files for context and style:\n<context>\n{context_str}\n</context>\n"
+    prompt += f"\nOutput ONLY the file content, no markdown fences, no explanation."
+
+    with OpenRouter(api_key=os.environ["OPENROUTER_API_KEY"]) as client:
+        resp = client.chat.send(
+            model=args.model,
+            messages=[
+                {"role": "system", "content": "You are a code generator. Output only the requested file content. No markdown fences, no commentary."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=args.max_tokens,
+        )
+
+    output = resp.choices[0].message.content
+    target = pathlib.Path(args.target)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(output)
+    print(f"Written to {args.target} ({len(output)} chars)")
+
+if __name__ == "__main__":
+    main()
