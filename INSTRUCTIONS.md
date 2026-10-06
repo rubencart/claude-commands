@@ -172,24 +172,30 @@ Add the following block to the `CLAUDE.md` in the root of any project where you 
 ```markdown
 ## OpenRouter Delegation Tools (Token Saving)
 
+**NEVER use the Read tool on files >400 lines. NEVER read 3 or more files yourself. Always delegate to ask-worker instead.**
+
 ### ask-worker — bulk reading
-For reading files >400 lines, or when you'd otherwise read 3+ files:
-  ask-worker --paths <file1> <file2>... --question "<question>"
-Returns a structured summary. Use that instead of reading files yourself.
+```
+ask-worker --paths <file1> <file2>... --question "<question>"
+```
+Use this whenever you would otherwise read a large file or multiple files. It sends the files to a cheap model and returns a structured summary. You read the summary, not the files.
 
 ### worker-write — boilerplate generation
-For tests, config files, docstrings, or repetitive patterns:
-  worker-write --spec "<what>" --context <reference> --target <output>
-Then review the output and edit only what needs fixing.
+```
+worker-write --spec "<what to generate>" --context <reference_file> --target <output_file>
+```
+**NEVER write tests, config files, docstrings, or repetitive boilerplate directly.** Always delegate to worker-write. Review the output and make surgical edits only where needed.
 
-### When NOT to delegate
-- Tasks under ~2000 tokens (delegation overhead isn't worth it)
-- Architectural decisions, debugging, safety-critical code
-- Anything requiring careful reasoning
-- When exact line numbers are needed for editing
+### When NOT to delegate (use your own tools instead)
+- Tasks under ~2000 tokens (small single files, quick lookups)
+- Debugging and root-cause analysis
+- Architectural decisions or safety-critical reasoning
+- When you need exact line numbers for editing (read only the specific range with offset/limit)
 ```
 
 This is what makes Claude Code automatically use the tools — without these instructions in `CLAUDE.md`, Claude won't know they exist.
+
+> **Why the strong language matters:** Claude defaults to its own built-in `Read` tool even when a CLAUDE.md section suggests an alternative. Soft phrasing like "use this for large files" is routinely ignored. Only explicit `NEVER`/`ALWAYS` directives reliably override the default behavior.
 
 ## Usage examples
 
