@@ -9,7 +9,7 @@ def main():
     parser.add_argument("--spec", required=True, help="What to generate")
     parser.add_argument("--context", nargs="+", default=[], help="Reference files to read for context")
     parser.add_argument("--target", required=True, help="Output file path")
-    parser.add_argument("--model", default="deepseek/deepseek-v4-flash", help="OpenRouter model ID")
+    parser.add_argument("--model", default="deepseek/deepseek-v4.1-flash", help="OpenRouter model ID")
     parser.add_argument("--max-tokens", type=int, default=16384)
     args = parser.parse_args()
 

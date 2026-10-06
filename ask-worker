@@ -8,7 +8,7 @@ def main():
     parser = argparse.ArgumentParser(description="Ask a cheap LLM to analyze files")
     parser.add_argument("--paths", nargs="+", required=True, help="Files to read")
     parser.add_argument("--question", required=True, help="Question about the files")
-    parser.add_argument("--model", default="deepseek/deepseek-v4-flash", help="OpenRouter model ID")
+    parser.add_argument("--model", default="deepseek/deepseek-v4.1-flash", help="OpenRouter model ID")
     parser.add_argument("--max-tokens", type=int, default=8192)
     args = parser.parse_args()
 
