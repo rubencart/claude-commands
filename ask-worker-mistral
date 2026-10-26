@@ -1,0 +1,48 @@
+#!/scratch/rcartuyvels/openrouter_proj/.venv/bin/python3.12
+"""Delegate bulk file reading/analysis to GLM 5.3 via Mistral."""
+
+import argparse
+import pathlib
+import sys
+
+from mistral_client import DEFAULT_MODEL, chat_completion
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Ask GLM 5.3 to analyze files")
+    parser.add_argument("--paths", nargs="+", required=True, help="Files to read")
+    parser.add_argument("--question", required=True, help="Question about the files")
+    parser.add_argument("--model", default=DEFAULT_MODEL, help="Mistral model ID")
+    parser.add_argument("--max-tokens", type=int, default=8192)
+    args = parser.parse_args()
+
+    docs = []
+    for path in args.paths:
+        try:
+            content = pathlib.Path(path).read_text()
+            docs.append(f"<file path='{path}'>\n{content}\n</file>")
+        except Exception as error:
+            print(f"Warning: could not read {path}: {error}", file=sys.stderr)
+
+    if not docs:
+        print("Error: no files could be read", file=sys.stderr)
+        sys.exit(1)
+
+    corpus = "\n\n".join(docs)
+    response = chat_completion(
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a precise code analyst. Analyze the provided files and answer the question accurately and concisely. Use structured formatting.",
+            },
+            {"role": "user", "content": f"<corpus>\n{corpus}\n</corpus>"},
+            {"role": "user", "content": args.question},
+        ],
+        model=args.model,
+        max_tokens=args.max_tokens,
+    )
+    print(response)
+
+
+if __name__ == "__main__":
+    main()

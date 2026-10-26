@@ -1,0 +1,52 @@
+#!/scratch/rcartuyvels/openrouter_proj/.venv/bin/python3.12
+"""Delegate boilerplate/test/doc generation to GLM 5.3 via Mistral."""
+
+import argparse
+import pathlib
+import sys
+
+from mistral_client import DEFAULT_MODEL, chat_completion
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Generate files using GLM 5.3")
+    parser.add_argument("--spec", required=True, help="What to generate")
+    parser.add_argument("--context", nargs="+", default=[], help="Reference files to read for context")
+    parser.add_argument("--target", required=True, help="Output file path")
+    parser.add_argument("--model", default=DEFAULT_MODEL, help="Mistral model ID")
+    parser.add_argument("--max-tokens", type=int, default=16384)
+    args = parser.parse_args()
+
+    context_parts = []
+    for path in args.context:
+        try:
+            content = pathlib.Path(path).read_text()
+            context_parts.append(f"<file path='{path}'>\n{content}\n</file>")
+        except Exception as error:
+            print(f"Warning: could not read {path}: {error}", file=sys.stderr)
+
+    context_str = "\n\n".join(context_parts) if context_parts else ""
+    prompt = f"Generate the following:\n{args.spec}\n"
+    if context_str:
+        prompt += f"\nUse these reference files for context and style:\n<context>\n{context_str}\n</context>\n"
+    prompt += "\nOutput ONLY the file content, no markdown fences, no explanation."
+
+    output = chat_completion(
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a code generator. Output only the requested file content. No markdown fences, no commentary.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        model=args.model,
+        max_tokens=args.max_tokens,
+    )
+    target = pathlib.Path(args.target)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(output)
+    print(f"Written to {args.target} ({len(output)} chars)")
+
+
+if __name__ == "__main__":
+    main()
