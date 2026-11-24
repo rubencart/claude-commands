@@ -5,7 +5,7 @@ import argparse
 import pathlib
 import sys
 
-from mistral_client import DEFAULT_MODEL, chat_completion
+from mistral_client import chat_completion
 
 
 def main():
@@ -13,7 +13,6 @@ def main():
     parser.add_argument("--spec", required=True, help="What to generate")
     parser.add_argument("--context", nargs="+", default=[], help="Reference files to read for context")
     parser.add_argument("--target", required=True, help="Output file path")
-    parser.add_argument("--model", default=DEFAULT_MODEL, help="Mistral model ID")
     parser.add_argument("--max-tokens", type=int, default=16384)
     args = parser.parse_args()
 
@@ -39,7 +38,7 @@ def main():
             },
             {"role": "user", "content": prompt},
         ],
-        model=args.model,
+        model="zai-glm-5-3",
         max_tokens=args.max_tokens,
     )
     target = pathlib.Path(args.target)

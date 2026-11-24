@@ -49,6 +49,18 @@ def chat_completion(messages, model=DEFAULT_MODEL, max_tokens=8192):
         raise RuntimeError(f"Could not reach Mistral API: {error.reason}") from error
 
     try:
-        return response_data["choices"][0]["message"]["content"]
+        content = response_data["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError) as error:
         raise RuntimeError(f"Unexpected Mistral response: {response_data}") from error
+
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        text_parts = [
+            item["text"]
+            for item in content
+            if isinstance(item, dict) and item.get("type") == "text" and isinstance(item.get("text"), str)
+        ]
+        if text_parts:
+            return "".join(text_parts)
+    raise RuntimeError(f"Mistral response contained no text content: {response_data}")
