@@ -35,13 +35,13 @@ python3.12 -m venv .venv
 chmod +x ask-worker worker-write ask-worker-mistral worker-write-mistral
 ```
 
-The scripts currently have an **absolute Python interpreter path** in their first line (the shebang), pointing to `/scratch/rcartuyvels/openrouter_proj/.venv/bin/python3.12`. On your machine, edit the first line of each of these four files to point to your own environment, for example:
+The scripts currently have an **absolute Python interpreter path** in their first line (the shebang). Edit the first line of each of these four files to point to your own environment, for example:
 
 ```text
-#!/home/alex/tools/openrouter_proj/.venv/bin/python3.12
+#!/absolute/path/to/openrouter_proj/.venv/bin/python3.12
 ```
 
-Use the actual absolute path; do not leave `/path/to/...` or the example `/home/alex/...` in the shebang. The Mistral scripts import `mistral_client.py` from the same directory, so no path changes are needed in that module.
+Replace the example with the actual absolute path; do not leave the placeholder in the shebang. The Mistral scripts import `mistral_client.py` from the same directory, so no path changes are needed in that module.
 
 To run the commands without typing their full paths, add the repository directory to your `PATH`. For Bash, add this to `~/.bashrc` (replace the example path):
 
@@ -109,6 +109,8 @@ worker-write-mistral \
 ## Claude Code routing
 
 If you want Claude Code to use these commands, add a short note to the relevant project's `CLAUDE.md`, for example:
+
+This repository's [AGENTS.md](AGENTS.md) is another example of agent instructions that route work through the Mistral commands and provide an OpenRouter fallback.
 
 ```markdown
 ## Worker tools
